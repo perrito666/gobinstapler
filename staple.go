@@ -23,7 +23,7 @@ func addToTar(filesToInclude []string, tWriter *tar.Writer) (int64, error) {
 	for _, filePath := range filesToInclude {
 		fInfo, err := os.Stat(filePath)
 		if err != nil {
-			return 0, errors.Wrap(err, "accessing file to include in stappled file")
+			return 0, errors.Wrap(err, "accessing file to include in stapled file")
 		}
 		// Header
 		// for now we just dereference symlinks
@@ -55,9 +55,9 @@ func addToTar(filesToInclude []string, tWriter *tar.Writer) (int64, error) {
 		if err != nil {
 			return 0, errors.Wrapf(err, "trying to read the contents of %s", filePath)
 		}
-		for i := range dirContents {
-			dirContents[i] = filepath.Join(filePath, dirContents[i])
-		}
+		//for i := range dirContents {
+		//	dirContents[i] = filepath.Join(filePath, dirContents[i])
+		//}
 		writen, err := addToTar(dirContents, tWriter)
 		if err != nil {
 			return 0, errors.Wrapf(err, "adding to tar the contents of %s", filePath)

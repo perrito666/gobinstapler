@@ -38,7 +38,7 @@ var (
 	// ErrNothingToStaple sould be returned when we don't have arguments for the files
 	// or folders to staple to the binary.
 	ErrNothingToStaple = fmt.Errorf("there is nothing to staple to the binary")
-	// ErrNoBinary should be returned when the binary passed to stapple things to is
+	// ErrNoBinary should be returned when the binary passed to staple things to is
 	// either not a binary or not present.
 	ErrNoBinary = fmt.Errorf("the first argument is not a binary")
 )
@@ -89,17 +89,14 @@ func init() {
 		return
 	}
 	if fInfo.IsDir() {
-		err = errors.Wrap(ErrNoBinary, "the passed go binary is a directory")
+		err = errors.Wrapf(ErrNoBinary, "the passed go binary (%s) is a directory", config.goBinary)
 		return
 	}
+
 	config.target = args[1]
-	fInfo, err = os.Stat(args[1])
-	if err == nil {
+	fInfo, tErr := os.Stat(args[1])
+	if tErr == nil {
 		err = errors.Wrap(err, "the target file exists, for safety reasons we don't overwrite")
-		return
-	}
-	if fInfo.IsDir() {
-		err = errors.Wrap(ErrNoBinary, "the passed go binary is a directory")
 		return
 	}
 
@@ -111,10 +108,7 @@ func init() {
 			err = errors.Wrap(err, "performing stat in one of the staple files")
 			return
 		}
-		if fInfo.IsDir() {
-			err = errors.Wrap(ErrNoBinary, "the passed go binary is a directory")
-			return
-		}
+
 		config.stapleTargets[i-2] = args[i]
 	}
 
@@ -138,11 +132,11 @@ func main() {
 		fmt.Printf("copying the go binary into the target: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("binary size: %d", binarySize)
-	writen, err := buildTar(config.stapleTargets, target)
+	fmt.Printf("binary size: %d\n", binarySize)
+	_, err = buildTar(config.stapleTargets, target)
 	if err != nil {
-		fmt.Printf("writing files into stappled go: %v", err)
+		fmt.Printf("writing files into stapled go: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("tar size: %d", writen)
+	fmt.Fprintf(target, "%020d", uint64(binarySize))
 }
