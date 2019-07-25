@@ -114,29 +114,33 @@ func init() {
 
 }
 
-func main() {
+func fattenBinary() error {
 	target, err := os.Create(config.target)
 	if err != nil {
-		fmt.Printf("cannot create the target file: %v\n", err)
-		os.Exit(1)
+		return errors.Errorf("cannot create the target file: %v", err)
 	}
 	defer target.Close()
 	goBinary, err := os.Open(config.goBinary)
 	if err != nil {
-		fmt.Printf("cannot read source binary file: %v\n", err)
-		os.Exit(1)
+		return errors.Errorf("cannot read source binary file: %v", err)
 	}
 	defer goBinary.Close()
 	binarySize, err := io.Copy(target, goBinary)
 	if err != nil {
-		fmt.Printf("copying the go binary into the target: %v\n", err)
-		os.Exit(1)
+		return errors.Errorf("copying the go binary into the target: %v", err)
 	}
-	fmt.Printf("binary size: %d\n", binarySize)
+
 	_, err = buildTar(config.stapleTargets, target)
 	if err != nil {
-		fmt.Printf("writing files into stapled go: %v\n", err)
-		os.Exit(1)
+		return errors.Errorf("writing files into stapled go: %v", err)
 	}
 	fmt.Fprintf(target, "%020d", uint64(binarySize))
+	return nil
+}
+
+func main() {
+	if err := fattenBinary(); err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }
