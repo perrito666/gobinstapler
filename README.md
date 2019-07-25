@@ -1,10 +1,14 @@
 # gobinstapler
 
-A method to bundle files and folders into a go binary.
+A tool to make fat binaries by "stapling" files to it using tar.
 
 ## Rationale
 
 I often do quick tools whose UI is a crude web front-end with a few endpoints to be used locally, this proved a bit annoying in go since I was not able to bundle these htmls in a way that could satisfy me, especially in terms of proper versioning.
+There most likely are tools that do this or similar things, the one that comes to mind is [statik](https://github.com/rakyll/statik) which I have used before but I wanted three things:
+* I fancied writting the thing (and that by itself should be enough)
+* I wanted the tool to only affect the final binary
+* I wanted to have as little stuff in mem for this as possible so I can use large files, this way you get a file handler to a section of your tar I think so you get a sort of mmap
 
 ### Components
 
