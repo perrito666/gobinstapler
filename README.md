@@ -4,7 +4,7 @@ A method to bundle files and folders into a go binary.
 
 ## Rationale
 
-I often do quick tools whose UI is a crude web fron with a few endpoints to be used locally, this proved a bit annoying in go since I was not able to bundle these htmls in a way that could satisfy me, especially in terms of proper versioning.
+I often do quick tools whose UI is a crude web front-end with a few endpoints to be used locally, this proved a bit annoying in go since I was not able to bundle these htmls in a way that could satisfy me, especially in terms of proper versioning.
 
 ### Components
 
