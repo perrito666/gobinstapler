@@ -40,15 +40,15 @@ func main() {
 	if err != nil {
 		fmt.Printf("Something went wrong: %v", err)
 	}
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		c := fs
 		parts := strings.Split(r.URL.Path, "/")
 		if parts[len(parts)-1] == "" {
 			parts = parts[:len(parts)-1]
 		}
-		fmt.Printf("%s %s\n", r.Method, r.URL.Path)
 		for i, part := range parts {
-			if part == "" {
+			if part == "" && len(parts) != 1 {
 				// first one, when / preceeded, no harm jumping it
 				continue
 			}
