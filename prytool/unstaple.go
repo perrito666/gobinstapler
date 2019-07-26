@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -75,6 +76,84 @@ func openBinFile(binLocation string) (*os.File, error) {
 		return nil, errors.Wrap(err, "opening the binary to list files")
 	}
 	return f, nil
+}
+
+// File contains some metadata about a file contained in a bundled tar.
+type File struct {
+	Name     string
+	FullPath string
+	Size     int64
+}
+
+// Folder contains some metadata about a folder in a bundled tar.
+type Folder struct {
+	Name     string
+	FullPath string
+	Files    map[string]*File
+	Folders  map[string]*Folder
+}
+
+func extractContainedFolder(f *Folder, path string) *Folder {
+	currentF := f
+	path, _ = filepath.Split(path)
+	parts := strings.Split(path, string(os.PathSeparator))
+	for _, part := range parts {
+		if part == "" {
+			continue
+		}
+		subF, ok := currentF.Folders[part]
+		if !ok {
+			fullPath := filepath.Join(currentF.FullPath, part)
+			subF = &Folder{
+				Name:     part,
+				FullPath: fullPath,
+				Files:    map[string]*File{},
+				Folders:  map[string]*Folder{},
+			}
+			currentF.Folders[part] = subF
+		}
+		currentF = subF
+	}
+	return currentF
+}
+
+// ListStructuredFiles returns the root folder of the tar containing all the files
+// and folders below it in a structured manner.
+func ListStructuredFiles(binLocation string) (*Folder, error) {
+	allPaths, err := ListBundledFiles(binLocation)
+	if err != nil {
+		return nil, errors.Wrap(err, "obtaining tar's path list")
+	}
+
+	rootF := &Folder{
+		Name:     string(os.PathSeparator),
+		FullPath: string(os.PathSeparator),
+		Files:    map[string]*File{},
+		Folders:  map[string]*Folder{},
+	}
+	for k, v := range allPaths {
+		f := extractContainedFolder(rootF, k)
+		_, fName := filepath.Split(k)
+		if v.FileInfo.IsDir() {
+			if _, ok := f.Folders[fName]; !ok {
+				f.Folders[fName] = &Folder{
+					Name:     fName,
+					FullPath: k,
+					Files:    map[string]*File{},
+					Folders:  map[string]*Folder{},
+				}
+			}
+		} else {
+			if _, ok := f.Files[fName]; !ok {
+				f.Files[fName] = &File{
+					Name:     fName,
+					FullPath: k,
+					Size:     v.FileInfo.Size(),
+				}
+			}
+		}
+	}
+	return rootF, nil
 }
 
 // ListBundledFiles returns a map of file path to File information for the files

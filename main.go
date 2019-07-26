@@ -47,6 +47,7 @@ type configFields struct {
 	goBinary      string
 	target        string
 	stapleTargets []string
+	relativeTo    string
 }
 
 var config = configFields{}
@@ -57,6 +58,7 @@ func init() {
 		fmt.Fprintf(os.Stderr, "%s [flags] <go-binary> <target> [fileOrFolder1 ...fileOrFolderN]:\n\n", os.Args[0])
 		gnuflag.PrintDefaults()
 	}
+	relativeTo := gnuflag.CommandLine.String("relative", "", "if set, the paths of files/folders to staple will have this path stripped.")
 
 	var err error
 	defer func() {
@@ -111,6 +113,7 @@ func init() {
 
 		config.stapleTargets[i-2] = args[i]
 	}
+	config.relativeTo = *relativeTo
 
 }
 
@@ -130,7 +133,7 @@ func fattenBinary() error {
 		return errors.Errorf("copying the go binary into the target: %v", err)
 	}
 
-	_, err = buildTar(config.stapleTargets, target)
+	_, err = buildTar(config.stapleTargets, target, config.relativeTo)
 	if err != nil {
 		return errors.Errorf("writing files into stapled go: %v", err)
 	}

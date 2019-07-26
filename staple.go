@@ -31,20 +31,23 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 )
 
-func buildTar(filesToInclude []string, tarFile io.Writer) (int64, error) {
+func buildTar(filesToInclude []string, tarFile io.Writer, relativeTo string) (int64, error) {
 	tWriter := tar.NewWriter(tarFile)
 	defer tWriter.Close()
-	return addToTar(filesToInclude, tWriter)
+	return addToTar(filesToInclude, tWriter, relativeTo)
 }
 
 // buildTar will try to write the files passed into the passed ioWriter in tar format
 // if the writing fails some data might already be writte.
-func addToTar(filesToInclude []string, tWriter *tar.Writer) (int64, error) {
+func addToTar(filesToInclude []string, tWriter *tar.Writer, relativeTo string) (int64, error) {
 	var contentsSize int64
+	relativeTo = strings.TrimSuffix(relativeTo, string(os.PathSeparator))
+
 	for _, filePath := range filesToInclude {
 		fInfo, err := os.Stat(filePath)
 		if err != nil {
@@ -56,7 +59,8 @@ func addToTar(filesToInclude []string, tWriter *tar.Writer) (int64, error) {
 		if err != nil {
 			return 0, errors.Wrap(err, "creating header for file")
 		}
-		hdr.Name = filePath
+		hdr.Name = strings.TrimPrefix(filePath, relativeTo)
+
 		err = tWriter.WriteHeader(hdr)
 		if err != nil {
 			return 0, errors.Wrapf(err, "writing header information for %s", filePath)
@@ -83,7 +87,7 @@ func addToTar(filesToInclude []string, tWriter *tar.Writer) (int64, error) {
 		//for i := range dirContents {
 		//	dirContents[i] = filepath.Join(filePath, dirContents[i])
 		//}
-		writen, err := addToTar(dirContents, tWriter)
+		writen, err := addToTar(dirContents, tWriter, relativeTo)
 		if err != nil {
 			return 0, errors.Wrapf(err, "adding to tar the contents of %s", filePath)
 		}
